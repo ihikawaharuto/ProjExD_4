@@ -255,19 +255,7 @@ class EMP(pg.sprite.Sprite):
         # 敵機の無力化
         for emy in emys:
             emy.interval = math.inf  # 爆弾を投下できなくする（無限大）
-            # ラプラシアン縁を重ねた上で全体を少し淡くして添付画像のような見た目にする
-            base = emy.image.convert_alpha()
-            lap = pg.transform.laplacian(base.convert())
-            lap.set_colorkey((0, 0, 0))
-            lap = lap.convert_alpha()
-            overlay = pg.Surface(base.get_size(), pg.SRCALPHA)
-            overlay.blit(base, (0, 0))
-            overlay.blit(lap, (0, 0))
-            # 軽く白を重ねて色味を淡くする（控えめ）
-            pale = pg.Surface(base.get_size(), pg.SRCALPHA)
-            pale.fill((255, 255, 255, 30))
-            overlay.blit(pale, (0, 0))
-            emy.image = overlay
+            emy.image = pg.transform.laplacian(emy.image)  # 見た目をラプラシアンフィルタに
 
         # 爆弾の無力化
         for bomb in bombs:
