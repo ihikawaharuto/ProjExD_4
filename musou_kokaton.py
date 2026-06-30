@@ -240,6 +240,27 @@ class Score:
     def update(self, screen: pg.Surface):
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
+        
+        
+        
+class Gravity(pg.sprite.Sprite):#############大島担当
+    """
+    重力場
+    """
+    def __init__(self, life):
+        super().__init__()
+
+        self.image = pg.Surface((WIDTH, HEIGHT))
+        pg.draw.rect(self.image, (0, 0, 0), (0, 0, WIDTH, HEIGHT))
+        self.image.set_alpha(128)
+
+        self.rect = self.image.get_rect()
+        self.life = life
+
+    def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill()
 
 
 def main():
@@ -251,6 +272,7 @@ def main():
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
+    gravities = pg.sprite.Group()####重力波
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
 
@@ -261,8 +283,14 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-                beams.add(Beam(bird))
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    beams.add(Beam(bird))
+
+                if event.key == pg.K_RETURN:
+                    if score.value >= 200:
+                        score.value -= 200
+                        gravities.add(Gravity(400))
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -278,9 +306,17 @@ def main():
             score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
+        for emy in pg.sprite.groupcollide(emys, gravities, True, False).keys():####重力波と衝突した敵
+            exps.add(Explosion(emy, 100))
+            score.value += 10
+        
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
+        
+        for bomb in pg.sprite.groupcollide(bombs, gravities, True, False).keys():####重力波と衝突した爆弾
+            exps.add(Explosion(bomb, 50))
+            score.value += 1
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
             bird.change_img(8, screen)  # こうかとん悲しみエフェクト
@@ -290,14 +326,22 @@ def main():
             return
 
         bird.update(key_lst, screen)
+
         beams.update()
         beams.draw(screen)
+
         emys.update()
         emys.draw(screen)
+
         bombs.update()
         bombs.draw(screen)
+
+        gravities.update()
+        gravities.draw(screen)
+
         exps.update()
         exps.draw(screen)
+
         score.update(screen)
         pg.display.update()
         tmr += 1
